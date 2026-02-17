@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0500">
+<title>📻 Radio PS</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Special+Elite&family=VT323&family=Caveat:wght@700&display=swap');
+
+:root {
+  --gold:  #f5c842;
+  --amber: #e8951a;
+  --dark:  #1a0e00;
+  --cream: #f7e8c8;
+  --red:   #c0392b;
+  --green: #27ae60;
+  --tube:  rgba(255,200,50,0.4);
+
+  /* Размеры радио адаптивно */
+  --radio-w: min(480px, 96vw);
+  --face-size: clamp(120px, 28vw, 160px);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { height: 100%; }
+
+body {
+  background: #0a0500;
+  min-height: 100%;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: 'Special Elite', cursive;
+  overflow-x: hidden;
+  overflow-y: auto;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+/* Grain */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 999; opacity: 0.35;
+}
+
+/* Scanlines */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.12) 2px, rgba(0,0,0,0.12) 4px);
+  pointer-events: none; z-index: 998;
+}
+
+/* ═══════════ LOGIN ═══════════ */
+#login-screen {
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse at center, #1a0e00 0%, #000 100%);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 200; gap: 20px;
+  padding: 20px;
+}
+
+.login-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2.8rem, 14vw, 5rem);
+  color: var(--gold);
+  text-shadow: 0 0 30px var(--amber), 0 0 60px rgba(245,200,66,0.3);
+  letter-spacing: 8px;
+  animation: pulse-glow 2s ease-in-out infinite;
+  text-align: center;
+}
+
+.login-sub {
+  font-family: 'VT323', monospace;
+  font-size: clamp(0.85rem, 3.5vw, 1.3rem);
+  color: var(--amber);
+  letter-spacing: 4px;
+  margin-top: -14px;
+  text-align: center;
+}
+
+.login-box {
+  background: linear-gradient(145deg, #2a1500, #1a0e00);
+  border: 2px solid var(--amber);
+  border-radius: 16px;
+  padding: clamp(20px, 5vw, 36px) clamp(20px, 6vw, 48px);
+  display: flex; flex-direction: column; gap: 14px;
+  box-shadow: 0 0 40px rgba(232,149,26,0.3), inset 0 0 20px rgba(0,0,0,0.5);
+  width: 100%; max-width: 360px;
+}
+
+.login-box label {
+  color: var(--cream);
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.login-box input {
+  background: #0d0600;
+  border: 1px solid #5a3800;
+  border-radius: 8px;
+  color: var(--gold);
+  font-family: 'VT323', monospace;
+  font-size: 1.4rem;
+  padding: 12px 14px;
+  outline: none;
+  letter-spacing: 3px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  width: 100%;
+  /* Prevent iOS zoom */
+  font-size: max(16px, 1.1rem);
+}
+
+.login-box input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 12px rgba(245,200,66,0.4);
+}
+
+.login-btn {
+  background: linear-gradient(135deg, var(--amber), var(--gold));
+  border: none; border-radius: 10px;
+  color: var(--dark);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.5rem; letter-spacing: 3px;
+  padding: 14px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.3s;
+  margin-top: 6px;
+  touch-action: manipulation;
+  /* min touch target */
+  min-height: 52px;
+}
+.login-btn:hover  { transform: scale(1.02); box-shadow: 0 0 20px rgba(245,200,66,0.5); }
+.login-btn:active { transform: scale(0.96); }
+
+.login-error {
+  color: var(--red);
+  font-family: 'VT323', monospace;
+  font-size: 1.1rem;
+  text-align: center;
+  letter-spacing: 2px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  min-height: 1.4em;
+}
+
+/* ═══════════ TOP BAR ═══════════ */
+#topbar {
+  display: none;
+  position: sticky; top: 0;
+  width: 100%; z-index: 50;
+  background: rgba(10,5,0,0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid #3a2500;
+  padding: 10px 16px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tb-badge {
+  font-family: 'VT323', monospace;
+  font-size: clamp(0.9rem, 3.5vw, 1.1rem);
+  color: var(--gold);
+  letter-spacing: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60%;
+}
+
+.tb-logout {
+  background: rgba(30,10,0,0.8);
+  border: 1px solid #4a3010;
+  border-radius: 8px;
+  color: #8a6030;
+  font-family: 'VT323', monospace;
+  font-size: 1rem; letter-spacing: 2px;
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  touch-action: manipulation;
+  white-space: nowrap;
+  min-height: 40px;
+}
+.tb-logout:hover { color: var(--red); border-color: var(--red); }
+
+/* ═══════════ MAIN APP ═══════════ */
+#app {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding-bottom: 32px;
+  position: relative; z-index: 10;
+}
+
+/* ═══════════ RADIO BODY ═══════════ */
+.radio-wrap {
+  width: var(--radio-w);
+  padding: clamp(10px, 3vw, 20px);
+}
+
+.radio-body {
+  background: linear-gradient(160deg, #5c3600 0%, #3d2400 40%, #2a1500 100%);
+  border-radius: clamp(16px, 4vw, 28px);
+  padding: clamp(16px, 4vw, 30px) clamp(14px, 4vw, 32px) clamp(20px, 5vw, 36px);
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.8),
+    0 0 0 3px #7a4f1a,
+    0 0 0 6px #3d2400,
+    0 0 0 8px #6a4010,
+    inset 0 2px 10px rgba(255,200,100,0.15),
+    inset 0 -4px 20px rgba(0,0,0,0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.radio-body::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, transparent, rgba(255,210,100,0.6), transparent);
+}
+.radio-body::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(92deg, transparent, transparent 40px, rgba(0,0,0,0.06) 40px, rgba(0,0,0,0.06) 42px);
+  pointer-events: none; border-radius: inherit;
+}
+
+/* ═══════════ FACE DISPLAY ═══════════ */
+.face-display {
+  background: radial-gradient(ellipse at 30% 30%, #2a1e00, #0d0800);
+  border-radius: clamp(10px, 3vw, 16px);
+  border: 3px solid #6a4a10;
+  box-shadow:
+    inset 0 0 30px rgba(0,0,0,0.7),
+    inset 0 0 10px rgba(255,180,50,0.1),
+    0 0 20px rgba(255,160,20,0.2);
+  padding: clamp(14px, 3.5vw, 24px) clamp(12px, 3vw, 16px) clamp(10px, 2.5vw, 16px);
+  margin-bottom: clamp(14px, 3.5vw, 24px);
+  display: flex; flex-direction: column;
+  align-items: center; gap: clamp(8px, 2vw, 12px);
+  min-height: clamp(160px, 40vw, 220px);
+  position: relative;
+  overflow: visible;
+}
+
+.face-display::before {
+  content: '';
+  position: absolute; inset: -2px;
+  border-radius: clamp(12px, 3vw, 18px);
+  pointer-events: none;
+  animation: tube-pulse 3s ease-in-out infinite;
+}
+
+/* ═══════════ SVG FACE ═══════════ */
+.radio-face {
+  width: var(--face-size);
+  height: var(--face-size);
+  flex-shrink: 0;
+}
+
+/* ═══════════ THOUGHT BUBBLE ═══════════ */
+.thought-bubble {
+  position: absolute;
+  top: clamp(-70px,-15vw,-40px);
+  right: clamp(-20px,0px,0px);
+  background: rgba(255,248,220,0.96);
+  border-radius: 18px;
+  padding: 10px 14px;
+  max-width: clamp(130px, 36vw, 190px);
+  font-family: 'Caveat', cursive;
+  font-size: clamp(0.8rem, 3vw, 1rem);
+  color: #2c1800;
+  line-height: 1.3;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  display: none; z-index: 20;
+  word-break: break-word;
+}
+
+.thought-bubble::before {
+  content: '○○';
+  position: absolute;
+  bottom: -16px; left: 18px;
+  font-size: 0.45rem;
+  color: rgba(255,248,220,0.95);
+  letter-spacing: 4px;
+}
+
+/* ═══════════ STATUS ═══════════ */
+.status-display {
+  font-family: 'VT323', monospace;
+  font-size: clamp(0.8rem, 3.5vw, 1rem);
+  color: var(--amber);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  text-align: center;
+  min-height: 20px;
+}
+
+/* ═══════════ WAVEFORM ═══════════ */
+.waveform {
+  display: flex; align-items: center; gap: 3px;
+  height: clamp(22px, 5vw, 30px);
+}
+.wave-bar {
+  width: clamp(3px, 1vw, 5px);
+  background: var(--gold);
+  border-radius: 3px;
+  box-shadow: 0 0 5px var(--amber);
+  animation: wave-bounce 0.6s ease-in-out infinite;
+}
+.wave-bar:nth-child(1)  { animation-delay: 0s;    height: 60%; }
+.wave-bar:nth-child(2)  { animation-delay: 0.10s; height: 80%; }
+.wave-bar:nth-child(3)  { animation-delay: 0.20s; height: 100%; }
+.wave-bar:nth-child(4)  { animation-delay: 0.15s; height: 70%; }
+.wave-bar:nth-child(5)  { animation-delay: 0.05s; height: 90%; }
+.wave-bar:nth-child(6)  { animation-delay: 0.25s; height: 60%; }
+.wave-bar:nth-child(7)  { animation-delay: 0.30s; height: 80%; }
+.wave-bar:nth-child(8)  { animation-delay: 0.10s; height: 100%; }
+.wave-bar:nth-child(9)  { animation-delay: 0.20s; height: 70%; }
+.wave-bar:nth-child(10) { animation-delay: 0.00s; height: 50%; }
+.waveform.off { display: none; }
+
+/* ═══════════ CONTROLS ROW ═══════════ */
+.controls-row {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: clamp(8px, 2vw, 16px);
+}
+
+.knob-group { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+
+.knob {
+  width: clamp(40px, 10vw, 56px);
+  height: clamp(40px, 10vw, 56px);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #7a5020, #3d2500);
+  border: 3px solid #8a6030;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.6), inset 0 2px 6px rgba(255,200,100,0.2);
+  cursor: pointer; position: relative;
+  transition: transform 0.15s;
+  touch-action: manipulation;
+}
+.knob::after {
+  content: '';
+  position: absolute; top: 7px; left: 50%;
+  transform: translateX(-50%);
+  width: 3px; height: clamp(10px, 2.5vw, 14px);
+  background: var(--gold); border-radius: 2px;
+  box-shadow: 0 0 5px var(--amber);
+}
+.knob:active { transform: rotate(25deg) scale(0.95); }
+
+.knob-label { font-family: 'VT323', monospace; font-size: 0.75rem; color: #aa8040; letter-spacing: 2px; }
+
+/* Speaker grille */
+.speaker {
+  flex: 1;
+  height: clamp(40px, 10vw, 56px);
+  background: #1a0e00;
+  border-radius: 8px;
+  border: 2px solid #4a3010;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 3px; padding: 7px;
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.8);
+}
+.speaker-dot {
+  background: #3a2510; border-radius: 50%;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.8);
+}
+.speaker-dot.lit {
+  background: var(--amber);
+  box-shadow: 0 0 4px var(--amber);
+  animation: sp-lit 0.4s ease-in-out infinite alternate;
+}
+
+/* Tuner */
+.tuner-bar {
+  width: 100%; margin-top: clamp(8px, 2vw, 12px);
+  background: #0d0600;
+  border: 2px solid #4a3010; border-radius: 8px;
+  height: 22px; position: relative; overflow: hidden;
+}
+.tuner-scale {
+  position: absolute; top: 4px; left: 10px; right: 10px;
+  height: 4px;
+  background: linear-gradient(90deg, #3a2000, var(--amber), var(--gold), var(--amber), #3a2000);
+  border-radius: 2px;
+}
+.tuner-needle {
+  position: absolute; top: 2px; bottom: 2px;
+  width: 2px; background: var(--red);
+  box-shadow: 0 0 6px var(--red); border-radius: 1px;
+  left: 50%; animation: tune-sweep 5s ease-in-out infinite;
+}
+.tuner-labels {
+  position: absolute; bottom: 2px; left: 10px; right: 10px;
+  display: flex; justify-content: space-between;
+  font-family: 'VT323', monospace; font-size: 0.65rem; color: #6a4a20;
+}
+
+.brand-plate {
+  text-align: center; margin-top: clamp(8px, 2vw, 14px);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(1.3rem, 5vw, 1.8rem);
+  letter-spacing: 6px; color: var(--gold);
+  text-shadow: 0 0 10px rgba(245,200,66,0.4);
+}
+.brand-sub {
+  font-family: 'VT323', monospace;
+  font-size: clamp(0.6rem, 2vw, 0.75rem);
+  color: #6a4a20; letter-spacing: 3px; text-align: center;
+}
+
+/* ═══════════ TICKER ═══════════ */
+.ticker-wrap {
+  overflow: hidden; width: 100%;
+  background: #0a0500;
+  border-top: 1px solid #3a2500; border-bottom: 1px solid #3a2500;
+  padding: 3px 0;
+}
+.ticker-text {
+  display: inline-block; white-space: nowrap;
+  font-family: 'VT323', monospace;
+  font-size: clamp(0.8rem, 3vw, 1rem);
+  color: var(--amber); letter-spacing: 3px;
+  animation: ticker-scroll 18s linear infinite;
+}
+.ticker-wrap.off { display: none; }
+
+.offline-label {
+  font-family: 'VT323', monospace;
+  font-size: clamp(0.75rem, 3vw, 1rem);
+  color: #4a3010; letter-spacing: 3px; text-align: center;
+  display: none;
+}
+
+/* ═══════════ MOD PANEL ═══════════ */
+#mod-panel {
+  display: none; flex-direction: column; gap: 14px;
+  width: var(--radio-w);
+  padding: 0 clamp(10px, 3vw, 20px) clamp(16px, 4vw, 24px);
+}
+
+.mod-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(1.1rem, 4vw, 1.5rem);
+  color: var(--gold); letter-spacing: 4px;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+
+.mod-badge {
+  background: var(--red); color: #fff;
+  font-family: 'VT323', monospace; font-size: 0.8rem;
+  padding: 2px 8px; border-radius: 4px; letter-spacing: 2px;
+}
+
+.mod-tabs { display: flex; gap: 6px; }
+.mod-tab {
+  flex: 1; padding: clamp(8px, 2.5vw, 10px);
+  background: #0d0600; border: 2px solid #3a2500;
+  border-radius: 8px; color: #6a4a20;
+  font-family: 'VT323', monospace; font-size: clamp(0.9rem, 3.5vw, 1.1rem);
+  letter-spacing: 2px; cursor: pointer; text-align: center;
+  transition: all 0.2s; touch-action: manipulation;
+  min-height: 44px;
+}
+.mod-tab.active {
+  background: #2a1800; border-color: var(--gold); color: var(--gold);
+  box-shadow: 0 0 10px rgba(245,200,66,0.2);
+}
+
+.tab-content { display: none; flex-direction: column; gap: 10px; }
+.tab-content.active { display: flex; }
+
+.mod-input {
+  background: #0a0500; border: 2px solid #3a2500; border-radius: 8px;
+  color: var(--cream); font-family: 'Special Elite', cursive;
+  font-size: max(16px, 1rem); /* prevent iOS zoom */
+  padding: 12px 14px; outline: none; width: 100%;
+  transition: border-color 0.3s;
+}
+.mod-input:focus { border-color: var(--amber); }
+textarea.mod-input { resize: vertical; min-height: 80px; }
+
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.mod-btn {
+  background: linear-gradient(135deg, #8b4513, var(--amber));
+  border: none; border-radius: 8px; color: var(--dark);
+  font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 3px;
+  padding: 12px 16px; cursor: pointer; transition: all 0.2s;
+  flex: 1; touch-action: manipulation; min-height: 46px;
+}
+.mod-btn:hover { box-shadow: 0 0 14px rgba(232,149,26,0.5); }
+.mod-btn:active { transform: scale(0.96); }
+
+.mod-btn.green {
+  background: linear-gradient(135deg, #1a4a1a, var(--green));
+  color: #fff;
+}
+.mod-btn.red {
+  background: linear-gradient(135deg, #600, var(--red));
+  color: #fff;
+}
+
+.file-label {
+  display: flex; align-items: center; gap: 10px;
+  background: #0a0500; border: 2px dashed #3a2500; border-radius: 8px;
+  color: #6a4a20; font-family: 'VT323', monospace;
+  font-size: clamp(0.85rem, 3.5vw, 1rem); letter-spacing: 2px;
+  padding: 14px; cursor: pointer;
+  transition: all 0.2s; touch-action: manipulation;
+  min-height: 52px;
+}
+.file-label:hover  { border-color: var(--amber); color: var(--amber); }
+.file-label input  { display: none; }
+
+.queue-list {
+  display: flex; flex-direction: column; gap: 6px;
+  max-height: 160px; overflow-y: auto;
+}
+.queue-item {
+  background: #0d0600; border: 1px solid #3a2500; border-radius: 6px;
+  padding: 8px 10px; display: flex; align-items: center; gap: 8px;
+  font-family: 'VT323', monospace; font-size: clamp(0.85rem, 3.5vw, 1rem);
+  color: var(--cream);
+}
+.qi-type {
+  font-size: 0.7rem; padding: 2px 5px; border-radius: 4px;
+  letter-spacing: 1px; flex-shrink: 0;
+}
+.qi-type.audio { background: #1a4a1a; color: #5fca5f; }
+.qi-type.text  { background: #1a1a4a; color: #7070dd; }
+.qi-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qi-rm {
+  background: none; border: none; color: #5a3010; cursor: pointer;
+  font-size: 1rem; padding: 0 4px; transition: color 0.2s;
+  touch-action: manipulation; min-width: 28px; min-height: 28px;
+}
+.qi-rm:hover { color: var(--red); }
+
+.queue-empty {
+  font-family: 'VT323', monospace; font-size: 0.9rem;
+  color: #4a3010; letter-spacing: 2px; padding: 8px;
+}
+
+/* ═══════════ CONNECTING OVERLAY ═══════════ */
+#connecting {
+  position: fixed; inset: 0;
+  background: rgba(10,5,0,0.88);
+  display: none; align-items: center; justify-content: center;
+  flex-direction: column; gap: 16px;
+  z-index: 300; font-family: 'VT323', monospace;
+  font-size: 1.2rem; color: var(--amber); letter-spacing: 4px;
+}
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid #3a2500; border-top-color: var(--gold);
+  border-radius: 50%; animation: spin 0.8s linear infinite;
+}
+
+/* ═══════════ FLASH TOAST ═══════════ */
+.toast {
+  position: fixed; bottom: 20px; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(30,10,0,0.97);
+  border: 2px solid var(--amber); border-radius: 10px;
+  padding: 12px 24px; font-family: 'VT323', monospace;
+  font-size: 1.1rem; color: var(--gold); letter-spacing: 2px;
+  z-index: 9999; box-shadow: 0 0 20px rgba(232,149,26,0.4);
+  white-space: nowrap; max-width: 90vw;
+  animation: toast-in 0.3s ease;
+}
+
+/* ═══════════ KEYFRAMES ═══════════ */
+@keyframes pulse-glow {
+  0%,100% { text-shadow: 0 0 30px var(--amber), 0 0 60px rgba(245,200,66,0.25); }
+  50%      { text-shadow: 0 0 50px var(--gold), 0 0 100px rgba(245,200,66,0.5); }
+}
+@keyframes tube-pulse {
+  0%,100% { box-shadow: 0 0 20px 4px rgba(255,200,50,0.25); }
+  50%      { box-shadow: 0 0 35px 8px rgba(255,200,50,0.5); }
+}
+@keyframes wave-bounce {
+  0%,100% { transform: scaleY(1); }
+  50%      { transform: scaleY(0.3); }
+}
+@keyframes tune-sweep {
+  0%   { left: 12%; } 50% { left: 76%; } 100% { left: 12%; }
+}
+@keyframes ticker-scroll {
+  from { transform: translateX(100%); } to { transform: translateX(-120%); }
+}
+@keyframes head-bob {
+  0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); }
+}
+@keyframes sleep-breath {
+  0%,100% { transform: scaleY(1); } 50% { transform: scaleY(1.04); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes sp-lit {
+  from { opacity: 0.5; } to { opacity: 1; }
+}
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; }
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20%     { transform: translateX(-10px); }
+  40%     { transform: translateX(10px); }
+  60%     { transform: translateX(-7px); }
+  80%     { transform: translateX(7px); }
+}
+
+/* ═══════════ SCROLLBAR ═══════════ */
+.queue-list::-webkit-scrollbar { width: 4px; }
+.queue-list::-webkit-scrollbar-track { background: #0a0500; }
+.queue-list::-webkit-scrollbar-thumb { background: #4a3010; border-radius: 2px; }
+
+/* ═══════════ UPLOAD PROGRESS ═══════════ */
+.upload-progress {
+  width: 100%; height: 6px;
+  background: #1a0e00; border-radius: 3px; overflow: hidden;
+  display: none;
+}
+.upload-progress-bar {
+  height: 100%; background: linear-gradient(90deg, var(--amber), var(--gold));
+  border-radius: 3px; width: 0%;
+  transition: width 0.3s ease;
+}
+
+/* ═══════════ CONNECTION STATUS dot ═══════════ */
+.conn-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #444; display: inline-block;
+  box-shadow: 0 0 4px #444;
+  flex-shrink: 0;
+}
+.conn-dot.online  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.conn-dot.offline { background: var(--red);   box-shadow: 0 0 6px var(--red); }
+</style>
+</head>
+<body>
+
+<!-- ════ CONNECTING OVERLAY ════ -->
+<div id="connecting">
+  <div class="spinner"></div>
+  <span id="conn-msg">ПОДКЛЮЧЕНИЕ...</span>
+</div>
+
+<!-- ════ LOGIN ════ -->
+<div id="login-screen">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:20px;animation:fade-in 0.5s ease;width:100%;max-width:400px;">
+    <div class="login-title">📻 RADIO PS</div>
+    <div class="login-sub">▶ PEPE SHNEYNE BROADCASTING ▶</div>
+    <div class="login-box">
+      <label>Логин</label>
+      <input type="text"     id="u" placeholder="PS"   autocomplete="username"   inputmode="text">
+      <label>Пароль</label>
+      <input type="password" id="p" placeholder="••••" autocomplete="current-password">
+      <div class="login-error" id="login-err"></div>
+      <button class="login-btn" id="login-btn">🎙 ВОЙТИ В ЭФИР</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ TOP BAR ════ -->
+<div id="topbar">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="conn-dot" id="conn-dot"></div>
+    <span class="tb-badge" id="tb-badge">📻 RADIO PS</span>
+  </div>
+  <button class="tb-logout" onclick="doLogout()">◀ ВЫЙТИ</button>
+</div>
+
+<!-- ════ MAIN APP ════ -->
+<div id="app">
+
+  <!-- RADIO BODY -->
+  <div class="radio-wrap">
+    <div class="radio-body">
+
+      <!-- FACE DISPLAY -->
+      <div class="face-display">
+
+        <!-- Thought bubble -->
+        <div class="thought-bubble" id="thought-bubble"></div>
+
+        <!-- SVG RADIO FACE -->
+        <svg class="radio-face" id="radio-svg" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="hg" cx="40%" cy="35%">
+              <stop offset="0%" stop-color="#f5c842" stop-opacity="0.25"/>
+              <stop offset="100%" stop-color="#e8951a" stop-opacity="0"/>
+            </radialGradient>
+            <filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            <radialGradient id="disco" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#ffffff"/>
+              <stop offset="30%" stop-color="#ccaaff"/>
+              <stop offset="60%" stop-color="#ff88cc"/>
+              <stop offset="100%" stop-color="#4488ff"/>
+            </radialGradient>
+          </defs>
+
+          <!-- Head -->
+          <circle cx="80" cy="82" r="55" fill="#f5c842" stroke="#c89020" stroke-width="3"/>
+          <circle cx="80" cy="82" r="55" fill="url(#hg)"/>
+          <ellipse cx="65" cy="65" rx="20" ry="14" fill="rgba(255,255,255,0.13)" transform="rotate(-20,65,65)"/>
+
+          <!-- Ears -->
+          <circle cx="26" cy="82" r="10" fill="#e8951a" stroke="#c07810" stroke-width="2"/>
+          <circle cx="134" cy="82" r="10" fill="#e8951a" stroke="#c07810" stroke-width="2"/>
+          <circle cx="26" cy="82" r="5" fill="#c87010"/>
+          <circle cx="134" cy="82" r="5" fill="#c87010"/>
+
+          <!-- Eyes normal -->
+          <g id="eyes-normal">
+            <ellipse cx="62" cy="74" rx="10" ry="11" fill="#1a0e00" stroke="#4a3000" stroke-width="1.5"/>
+            <ellipse cx="98" cy="74" rx="10" ry="11" fill="#1a0e00" stroke="#4a3000" stroke-width="1.5"/>
+            <circle cx="65" cy="71" r="3.5" fill="white" opacity="0.9"/>
+            <circle cx="101" cy="71" r="3.5" fill="white" opacity="0.9"/>
+            <circle cx="65" cy="72" r="1.5" fill="#f5c842"/>
+            <circle cx="101" cy="72" r="1.5" fill="#f5c842"/>
+          </g>
+
+          <!-- Eyes sleep -->
+          <g id="eyes-sleep" display="none">
+            <path d="M52 74 Q62 68 72 74" stroke="#1a0e00" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <path d="M88 74 Q98 68 108 74" stroke="#1a0e00" stroke-width="3" fill="none" stroke-linecap="round"/>
+          </g>
+
+          <!-- Eyes cool (sunglasses) -->
+          <g id="eyes-cool" display="none">
+            <rect x="50" y="67" width="24" height="16" rx="6" fill="#1a0e00" stroke="#f5c842" stroke-width="2"/>
+            <rect x="86" y="67" width="24" height="16" rx="6" fill="#1a0e00" stroke="#f5c842" stroke-width="2"/>
+            <line x1="74" y1="73" x2="86" y2="73" stroke="#f5c842" stroke-width="2"/>
+            <line x1="50" y1="71" x2="44" y2="69" stroke="#f5c842" stroke-width="2"/>
+            <line x1="110" y1="71" x2="116" y2="69" stroke="#f5c842" stroke-width="2"/>
+            <circle cx="56" cy="71" r="2" fill="rgba(255,255,255,0.35)"/>
+            <circle cx="92" cy="71" r="2" fill="rgba(255,255,255,0.35)"/>
+          </g>
+
+          <!-- Mouth normal -->
+          <g id="mouth-normal">
+            <path d="M58 102 Q80 118 102 102" stroke="#1a0e00" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          </g>
+
+          <!-- Mouth lip bite -->
+          <g id="mouth-lipbite" display="none">
+            <path d="M58 100 Q80 108 102 100" stroke="#1a0e00" stroke-width="3" fill="none"/>
+            <path d="M66 101 Q80 112 94 101" fill="#d44040" stroke="#9a2020" stroke-width="1.5"/>
+            <rect x="68" y="100" width="8" height="5" rx="2" fill="white" stroke="#ccc" stroke-width="0.5"/>
+            <rect x="77" y="100" width="7" height="5" rx="2" fill="white" stroke="#ccc" stroke-width="0.5"/>
+            <rect x="85" y="100" width="8" height="5" rx="2" fill="white" stroke="#ccc" stroke-width="0.5"/>
+            <path d="M52 65 Q62 60 72 63" stroke="#1a0e00" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <path d="M88 63 Q98 60 108 65" stroke="#1a0e00" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <ellipse cx="47" cy="75" rx="3" ry="5" fill="#88ccff" opacity="0.7"/>
+            <ellipse cx="113" cy="75" rx="3" ry="5" fill="#88ccff" opacity="0.7"/>
+          </g>
+
+          <!-- Mouth talking -->
+          <g id="mouth-talk" display="none">
+            <ellipse cx="80" cy="106" rx="16" ry="10" fill="#1a0e00" stroke="#3a2000" stroke-width="2"/>
+            <ellipse cx="80" cy="102" rx="14" ry="4" fill="#cc5555"/>
+            <ellipse cx="80" cy="112" rx="8" ry="5" fill="#e07070"/>
+          </g>
+
+          <!-- Mouth sleep -->
+          <g id="mouth-sleep" display="none">
+            <path d="M68 104 Q80 110 92 104" stroke="#1a0e00" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <ellipse cx="80" cy="106" rx="5" ry="2.5" fill="#3a2000" opacity="0.4"/>
+          </g>
+
+          <!-- Nose -->
+          <ellipse cx="80" cy="90" rx="7" ry="5" fill="#d4a820" stroke="#a07810" stroke-width="1.5"/>
+          <circle cx="77" cy="90" r="2" fill="#5a3000"/>
+          <circle cx="83" cy="90" r="2" fill="#5a3000"/>
+
+          <!-- Antenna -->
+          <line x1="80" y1="27" x2="80" y2="10" stroke="#8a6030" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="80" cy="8" r="5" fill="#f5c842" stroke="#c07010" stroke-width="2" filter="url(#glow)"/>
+          <circle cx="80" cy="8" r="2" fill="#ff4444"/>
+
+          <!-- Antenna signal -->
+          <g id="antenna-sig" display="none">
+            <circle cx="80" cy="8" r="8" fill="none" stroke="#f5c842" stroke-width="1" opacity="0.7">
+              <animate attributeName="r" values="5;18;5" dur="2s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values="0.7;0;0.7" dur="2s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="80" cy="8" r="12" fill="none" stroke="#f5c842" stroke-width="1" opacity="0.4">
+              <animate attributeName="r" values="8;24;8" dur="2s" begin="0.3s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values="0.4;0;0.4" dur="2s" begin="0.3s" repeatCount="indefinite"/>
+            </circle>
+          </g>
+
+          <!-- Disco arm + ball -->
+          <g id="disco-arm" display="none">
+            <path d="M110 90 Q130 70 140 45" stroke="#e8951a" stroke-width="7" fill="none" stroke-linecap="round"/>
+            <circle cx="140" cy="45" r="5" fill="#e8951a" stroke="#c07810" stroke-width="2"/>
+            <g>
+              <circle cx="140" cy="32" r="14" fill="url(#disco)" stroke="silver" stroke-width="1"/>
+              <line x1="126" y1="32" x2="154" y2="32" stroke="rgba(255,255,255,0.25)" stroke-width="0.5"/>
+              <line x1="140" y1="18" x2="140" y2="46" stroke="rgba(255,255,255,0.25)" stroke-width="0.5"/>
+              <line x1="130" y1="22" x2="150" y2="42" stroke="rgba(255,255,255,0.25)" stroke-width="0.5"/>
+              <line x1="150" y1="22" x2="130" y2="42" stroke="rgba(255,255,255,0.25)" stroke-width="0.5"/>
+              <circle cx="135" cy="26" r="2" fill="white" opacity="0.85"/>
+              <circle cx="146" cy="36" r="1.5" fill="white" opacity="0.7"/>
+              <circle cx="137" cy="40" r="1" fill="white" opacity="0.6"/>
+              <circle cx="149" cy="24" r="1.5" fill="rgba(255,200,255,0.9)"/>
+              <animateTransform attributeName="transform" type="rotate" from="0 140 32" to="360 140 32" dur="1.2s" repeatCount="indefinite"/>
+            </g>
+            <line x1="140" y1="32" x2="20" y2="100" stroke="rgba(255,100,255,0.2)" stroke-width="1.5">
+              <animate attributeName="opacity" values="0.2;0.8;0.2" dur="0.5s" repeatCount="indefinite"/>
+            </line>
+            <line x1="140" y1="32" x2="50" y2="150" stroke="rgba(100,255,255,0.2)" stroke-width="1.5">
+              <animate attributeName="opacity" values="0.2;0.8;0.2" dur="0.7s" repeatCount="indefinite"/>
+            </line>
+          </g>
+
+          <!-- ZZZ -->
+          <g id="zzz" display="none">
+            <text x="100" y="52" font-family="sans-serif" font-size="12" fill="#88aaff" opacity="0.9">Z</text>
+            <text x="113" y="39" font-family="sans-serif" font-size="16" fill="#88aaff" opacity="0.65">Z</text>
+            <text x="126" y="25" font-family="sans-serif" font-size="20" fill="#88aaff" opacity="0.4">Z</text>
+          </g>
+
+        </svg>
+
+        <!-- Ticker -->
+        <div class="ticker-wrap off" id="ticker-wrap">
+          <div class="ticker-text" id="ticker-text">▶ NOW PLAYING ▶</div>
+        </div>
+
+        <!-- Status -->
+        <div class="status-display" id="status-text">⣿ В ЭФИРЕ ⣿</div>
+
+        <!-- Waveform -->
+        <div class="waveform off" id="waveform">
+          <div class="wave-bar"></div><div class="wave-bar"></div>
+          <div class="wave-bar"></div><div class="wave-bar"></div>
+          <div class="wave-bar"></div><div class="wave-bar"></div>
+          <div class="wave-bar"></div><div class="wave-bar"></div>
+          <div class="wave-bar"></div><div class="wave-bar"></div>
+        </div>
+
+        <div class="offline-label" id="offline-lbl">— ЭФИР ПУСТОЙ —</div>
+      </div>
+
+      <!-- KNOBS + SPEAKER -->
+      <div class="controls-row">
+        <div class="knob-group">
+          <div class="knob" id="knob1" onclick="rotateKnob('knob1')"></div>
+          <div class="knob-label">VOL</div>
+        </div>
+        <div class="speaker" id="speaker"></div>
+        <div class="knob-group">
+          <div class="knob" id="knob2" onclick="rotateKnob('knob2')"></div>
+          <div class="knob-label">TUNE</div>
+        </div>
+      </div>
+
+      <!-- Tuner bar -->
+      <div class="tuner-bar">
+        <div class="tuner-scale"></div>
+        <div class="tuner-needle"></div>
+        <div class="tuner-labels">
+          <span>88</span><span>92</span><span>96</span><span>100</span><span>104</span><span>108</span>
+        </div>
+      </div>
+
+      <div class="brand-plate">RADIO PS</div>
+      <div class="brand-sub">PEPE SHNEYNE BROADCASTING CORP · 99.9 FM</div>
+    </div>
+  </div>
+
+  <!-- MOD PANEL -->
+  <div id="mod-panel">
+    <div class="mod-title">🎛 ПУЛЬТ МОДЕРАТОРА <span class="mod-badge">MOD</span></div>
+
+    <div class="mod-tabs">
+      <button class="mod-tab active" onclick="switchTab('audio')">🎵 АУДИО</button>
+      <button class="mod-tab"        onclick="switchTab('text')">💬 ТЕКСТ</button>
+      <button class="mod-tab"        onclick="switchTab('queue')">📋 ОЧЕРЕДЬ</button>
+    </div>
+
+    <!-- Audio tab -->
+    <div class="tab-content active" id="tab-audio">
+      <label class="file-label" id="file-lbl">
+        <span>🎵</span>
+        <span id="file-name">Нажми чтобы выбрать аудиофайл…</span>
+        <input type="file" accept="audio/*" onchange="onFileChosen(this)">
+      </label>
+      <div class="upload-progress" id="upload-prog">
+        <div class="upload-progress-bar" id="upload-bar"></div>
+      </div>
+      <input type="text" class="mod-input" id="audio-title" placeholder="Название трека (необязательно)">
+      <div class="btn-row">
+        <button class="mod-btn"       onclick="addAudio('queue')">+ В ОЧЕРЕДЬ</button>
+        <button class="mod-btn green" onclick="addAudio('now')">▶ СЕЙЧАС</button>
+      </div>
+    </div>
+
+    <!-- Text tab -->
+    <div class="tab-content" id="tab-text">
+      <textarea class="mod-input" id="text-content" placeholder="Введи текст объявления…" rows="3"></textarea>
+      <div class="btn-row">
+        <button class="mod-btn"       onclick="addText('queue')">+ В ОЧЕРЕДЬ</button>
+        <button class="mod-btn green" onclick="addText('now')">▶ СЕЙЧАС</button>
+      </div>
+    </div>
+
+    <!-- Queue tab -->
+    <div class="tab-content" id="tab-queue">
+      <div class="queue-list" id="queue-list">
+        <div class="queue-empty">Очередь пуста…</div>
+      </div>
+      <div class="btn-row" style="margin-top:4px;">
+        <button class="mod-btn green" onclick="apiNext()" style="flex:2;">▶ СЛЕДУЮЩИЙ</button>
+        <button class="mod-btn red"   onclick="apiStop()">■ СТОП</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- Hidden audio player (for Mod — streams to server via API signals) -->
+<audio id="audio-player" style="display:none;" onended="onTrackEnded()"></audio>
+
+<script>
+'use strict';
+
+// ═══════════ CONFIG ═══════════
+const API   = ''; // same origin
+let token   = localStorage.getItem('rps_token') || null;
+let role    = localStorage.getItem('rps_role')  || null;
+let username = localStorage.getItem('rps_user') || null;
+
+// ═══════════ STATE ═══════════
+let radioState  = null;
+let ws          = null;
+let wsRetryT    = null;
+let currentAudioFile = null;
+const knobAngles = {};
+let isMod       = false;
+const speechSynth = window.speechSynthesis;
+
+// ═══════════ INIT ═══════════
+buildSpeaker();
+if (token) {
+  // Уже был залогинен — восстанавливаем
+  enterApp(role, username);
+} else {
+  showLogin();
+}
+
+// ═══════════ SPEAKER ═══════════
+function buildSpeaker() {
+  const sp = document.getElementById('speaker');
+  for (let i = 0; i < 24; i++) {
+    const d = document.createElement('div');
+    d.className = 'speaker-dot';
+    sp.appendChild(d);
+  }
+}
+setInterval(() => {
+  const dots = document.querySelectorAll('.speaker-dot');
+  if (radioState && (radioState.state === 'playing' || radioState.state === 'text')) {
+    dots.forEach(d => Math.random() > 0.5 ? d.classList.add('lit') : d.classList.remove('lit'));
+  } else {
+    dots.forEach(d => d.classList.remove('lit'));
+  }
+}, 280);
+
+// ═══════════ LOGIN ═══════════
+function showLogin() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('topbar').style.display = 'none';
+}
+
+document.getElementById('login-btn').addEventListener('click', doLogin);
+document.getElementById('p').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('u').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('p').focus(); });
+
+async function doLogin() {
+  const u = document.getElementById('u').value.trim();
+  const p = document.getElementById('p').value;
+  const errEl = document.getElementById('login-err');
+  const btn   = document.getElementById('login-btn');
+
+  if (!u || !p) { setLoginErr('Введи логин и пароль'); return; }
+  btn.textContent = '⏳ ВХОД...'; btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: u, password: p })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Ошибка');
+
+    token    = data.token;
+    role     = data.role;
+    username = data.username;
+    localStorage.setItem('rps_token', token);
+    localStorage.setItem('rps_role',  role);
+    localStorage.setItem('rps_user',  username);
+
+    errEl.textContent = '';
+    enterApp(role, username);
+  } catch (e) {
+    setLoginErr(e.message);
+    const box = document.querySelector('.login-box');
+    box.style.animation = 'none';
+    requestAnimationFrame(() => { box.style.animation = 'shake 0.4s'; });
+  } finally {
+    btn.textContent = '🎙 ВОЙТИ В ЭФИР'; btn.disabled = false;
+  }
+}
+
+function setLoginErr(msg) {
+  const el = document.getElementById('login-err');
+  el.textContent = '⚠ ' + msg;
+  el.style.opacity = '1';
+}
+
+async function doLogout() {
+  try {
+    await apiFetch('/api/logout', 'POST');
+  } catch(e) {}
+  clearAuth();
+}
+
+function clearAuth() {
+  token = null; role = null; username = null;
+  localStorage.removeItem('rps_token');
+  localStorage.removeItem('rps_role');
+  localStorage.removeItem('rps_user');
+  if (ws) { ws.close(); ws = null; }
+  if (wsRetryT) clearTimeout(wsRetryT);
+  radioState = null;
+  showLogin();
+  setState({ state: 'offline' });
+}
+
+// ═══════════ ENTER APP ═══════════
+function enterApp(r, uname) {
+  role  = r; isMod = (r === 'mod');
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display    = 'flex';
+  document.getElementById('topbar').style.display = 'flex';
+
+  const badge = document.getElementById('tb-badge');
+  if (isMod) {
+    badge.innerHTML = `🎛 MOD: ${uname}`;
+    badge.style.color = '#f5c842';
+    document.getElementById('mod-panel').style.display = 'flex';
+  } else {
+    badge.innerHTML = `🎧 ${uname}`;
+    badge.style.color = '#5fca5f';
+    document.getElementById('mod-panel').style.display = 'none';
+  }
+
+  connectWS();
+}
+
+// ═══════════ WEBSOCKET ═══════════
+function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.host}`);
+
+  ws.onopen = () => {
+    setConnDot(true);
+    if (wsRetryT) { clearTimeout(wsRetryT); wsRetryT = null; }
+  };
+
+  ws.onmessage = (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'state') applyState(msg.payload);
+    } catch(err) {}
+  };
+
+  ws.onclose = () => {
+    setConnDot(false);
+    wsRetryT = setTimeout(connectWS, 3000);
+  };
+
+  ws.onerror = () => ws.close();
+}
+
+function setConnDot(online) {
+  const d = document.getElementById('conn-dot');
+  d.className = 'conn-dot ' + (online ? 'online' : 'offline');
+}
+
+// ═══════════ STATE MACHINE ═══════════
+function applyState(s) {
+  radioState = s;
+
+  const prev = radioState?.state;
+
+  // If MOD and audio track is now playing — load into player
+  if (isMod && s.state === 'playing' && s.currentTrack) {
+    const player = document.getElementById('audio-player');
+    const src = '/uploads/' + s.currentTrack.filename;
+    if (player.dataset.trackId !== s.currentTrack.id) {
+      player.dataset.trackId = s.currentTrack.id;
+      player.src = src;
+      player.play().catch(() => {});
+    }
+  }
+
+  // If MOD and text — use TTS
+  if (isMod && s.state === 'text' && s.currentTrack) {
+    if (speechSynth && !speechSynth.speaking) {
+      const utt = new SpeechSynthesisUtterance(s.currentTrack.text);
+      utt.lang = 'ru-RU'; utt.rate = 0.9;
+      utt.onend = () => { onTrackEnded(); };
+      speechSynth.speak(utt);
+    }
+  }
+
+  if (isMod && s.state !== 'playing') {
+    const player = document.getElementById('audio-player');
+    if (!player.paused) player.pause();
+  }
+
+  setState(s);
+  renderQueue(s.queue || []);
+}
+
+function setState(s) {
+  const state = s.state || 'offline';
+
+  // Reset
+  svgShow('eyes-normal'); svgHide('eyes-sleep'); svgHide('eyes-cool');
+  svgShow('mouth-normal'); svgHide('mouth-lipbite'); svgHide('mouth-talk'); svgHide('mouth-sleep');
+  svgHide('disco-arm'); svgHide('zzz'); svgHide('antenna-sig');
+
+  document.getElementById('waveform').classList.add('off');
+  document.getElementById('ticker-wrap').classList.add('off');
+  document.getElementById('offline-lbl').style.display = 'none';
+  document.getElementById('thought-bubble').style.display = 'none';
+
+  const svg = document.getElementById('radio-svg');
+  svg.style.animation = '';
+
+  if (state === 'choosing') {
+    svgHide('mouth-normal'); svgShow('mouth-lipbite');
+    svgShow('antenna-sig');
+    setStatus('⏳ МОДЕР ВЫБИРАЕТ МУЗЫКУ…');
+    showThought(s.thoughtText || 'Сейчас что-то поставлю… 🤔');
+
+  } else if (state === 'playing') {
+    svgHide('eyes-normal'); svgShow('eyes-cool');
+    svgShow('disco-arm'); svgShow('antenna-sig');
+    svg.style.animation = 'head-bob 0.8s ease-in-out infinite';
+    document.getElementById('waveform').classList.remove('off');
+    document.getElementById('ticker-wrap').classList.remove('off');
+    document.getElementById('ticker-text').textContent = s.tickerText || '▶ NOW PLAYING ▶';
+    setStatus('▶ ИГРАЕТ МУЗЫКА');
+    if (s.thoughtText) showThought(s.thoughtText);
+
+  } else if (state === 'text') {
+    svgHide('mouth-normal'); svgShow('mouth-talk');
+    svgShow('antenna-sig');
+    setStatus('📢 РАДИО ГОВОРИТ…');
+    document.getElementById('waveform').classList.remove('off');
+    if (s.thoughtText) showThought(s.thoughtText);
+
+  } else { // offline
+    svgHide('eyes-normal'); svgShow('eyes-sleep');
+    svgHide('mouth-normal'); svgShow('mouth-sleep');
+    svgShow('zzz');
+    svg.style.animation = 'sleep-breath 4s ease-in-out infinite';
+    setStatus('💤 ЭФИР ПУСТОЙ');
+    document.getElementById('offline-lbl').style.display = 'block';
+  }
+}
+
+function svgShow(id) { const el=document.getElementById(id); if(el) el.setAttribute('display',''); }
+function svgHide(id) { const el=document.getElementById(id); if(el) el.setAttribute('display','none'); }
+function showThought(txt) {
+  const tb = document.getElementById('thought-bubble');
+  tb.textContent = txt;
+  tb.style.display = 'block';
+}
+function setStatus(txt) { document.getElementById('status-text').textContent = txt; }
+
+// ═══════════ QUEUE RENDER ═══════════
+function renderQueue(q) {
+  const list = document.getElementById('queue-list');
+  if (!q || q.length === 0) {
+    list.innerHTML = '<div class="queue-empty">Очередь пуста…</div>';
+    return;
+  }
+  list.innerHTML = q.map(item => `
+    <div class="queue-item">
+      <span class="qi-type ${item.type}">${item.type === 'audio' ? '🎵' : '💬'} ${item.type.toUpperCase()}</span>
+      <span class="qi-name">${escHtml(item.name)}</span>
+      <button class="qi-rm" onclick="removeItem('${item.id}')">✕</button>
+    </div>
+  `).join('');
+}
+
+function escHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ═══════════ MOD TABS ═══════════
+function switchTab(tab) {
+  document.querySelectorAll('.mod-tab').forEach((t,i) => {
+    t.classList.toggle('active', ['audio','text','queue'][i] === tab);
+  });
+  document.querySelectorAll('.tab-content').forEach((c,i) => {
+    c.classList.toggle('active', ['audio','text','queue'][i] === tab);
+  });
+}
+
+// ═══════════ MOD ACTIONS ═══════════
+function onFileChosen(input) {
+  if (input.files && input.files[0]) {
+    currentAudioFile = input.files[0];
+    document.getElementById('file-name').textContent = currentAudioFile.name;
+  }
+}
+
+async function addAudio(mode) {
+  if (!currentAudioFile) { toast('Выбери аудиофайл!'); return; }
+  const title = document.getElementById('audio-title').value.trim() || currentAudioFile.name;
+  const fd = new FormData();
+  fd.append('audio', currentAudioFile);
+  fd.append('title', title);
+
+  const progWrap = document.getElementById('upload-prog');
+  const progBar  = document.getElementById('upload-bar');
+  progWrap.style.display = 'block';
+  progBar.style.width = '0%';
+
+  try {
+    await xhrUpload(mode === 'now' ? '/api/play-now' : '/api/upload', fd, (pct) => {
+      progBar.style.width = pct + '%';
+    }, mode === 'now' ? { type: 'audio' } : null);
+
+    currentAudioFile = null;
+    document.getElementById('file-name').textContent = 'Нажми чтобы выбрать аудиофайл…';
+    document.getElementById('audio-title').value = '';
+    if (mode === 'queue') { toast('✅ Добавлено в очередь!'); switchTab('queue'); }
+    else toast('▶ Воспроизводится!');
+  } catch(e) {
+    toast('❌ Ошибка загрузки: ' + e.message);
+  } finally {
+    progWrap.style.display = 'none';
+  }
+}
+
+async function addText(mode) {
+  const txt = document.getElementById('text-content').value.trim();
+  if (!txt) { toast('Введи текст!'); return; }
+
+  try {
+    if (mode === 'now') {
+      await apiFetch('/api/play-now', 'POST', { type: 'text', text: txt });
+      toast('▶ Говорит!');
+    } else {
+      await apiFetch('/api/queue/text', 'POST', { text: txt });
+      toast('✅ Добавлено в очередь!');
+      switchTab('queue');
+    }
+    document.getElementById('text-content').value = '';
+  } catch(e) { toast('❌ ' + e.message); }
+}
+
+async function apiNext() {
+  try { await apiFetch('/api/next', 'POST'); }
+  catch(e) { toast('❌ ' + e.message); }
+}
+
+async function apiStop() {
+  if (speechSynth) speechSynth.cancel();
+  const player = document.getElementById('audio-player');
+  player.pause(); player.src = '';
+  try { await apiFetch('/api/stop', 'POST'); }
+  catch(e) { toast('❌ ' + e.message); }
+}
+
+async function removeItem(id) {
+  try { await apiFetch('/api/queue/' + id, 'DELETE'); }
+  catch(e) { toast('❌ ' + e.message); }
+}
+
+async function onTrackEnded() {
+  try { await apiFetch('/api/track-ended', 'POST'); }
+  catch(e) {}
+}
+
+// ═══════════ HTTP HELPERS ═══════════
+async function apiFetch(url, method = 'GET', body = null) {
+  const opts = {
+    method,
+    headers: { 'x-session-token': token }
+  };
+  if (body) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
+  const res = await fetch(url, opts);
+  if (res.status === 401) { clearAuth(); throw new Error('Сессия истекла'); }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Server error');
+  return data;
+}
+
+function xhrUpload(url, formData, onProgress, extraFields) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url);
+    xhr.setRequestHeader('x-session-token', token);
+
+    if (extraFields) {
+      for (const [k,v] of Object.entries(extraFields)) {
+        formData.append(k, v);
+      }
+    }
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(Math.round(e.loaded / e.total * 100));
+    };
+    xhr.onload = () => {
+      if (xhr.status === 401) { clearAuth(); reject(new Error('Сессия истекла')); return; }
+      try {
+        const data = JSON.parse(xhr.responseText);
+        if (xhr.status >= 400) reject(new Error(data.error || 'Error'));
+        else resolve(data);
+      } catch(e) { reject(e); }
+    };
+    xhr.onerror = () => reject(new Error('Сеть недоступна'));
+    xhr.send(formData);
+  });
+}
+
+// ═══════════ KNOB ═══════════
+function rotateKnob(id) {
+  const el = document.getElementById(id);
+  knobAngles[id] = ((knobAngles[id] || 0) + 45) % 360;
+  el.style.transform = `rotate(${knobAngles[id]}deg)`;
+}
+
+// ═══════════ TOAST ═══════════
+let toastT = null;
+function toast(msg) {
+  if (toastT) { clearTimeout(toastT); document.querySelectorAll('.toast').forEach(e => e.remove()); }
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  toastT = setTimeout(() => { el.remove(); toastT = null; }, 2400);
+}
+
+// ═══════════ PREVENT PULL-TO-REFRESH on mobile ═══════════
+let startY = 0;
+document.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
+document.addEventListener('touchmove', e => {
+  if (window.scrollY === 0 && e.touches[0].clientY > startY + 10) {
+    // don't preventDefault here — just ignore
+  }
+}, { passive: true });
+
+// ═══════════ CSS animation keyframes injection ═══════════
+const style = document.createElement('style');
+style.textContent = `
+@keyframes shake {
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-10px)}
+  40%{transform:translateX(10px)}
+  60%{transform:translateX(-8px)}
+  80%{transform:translateX(8px)}
+}`;
+document.head.appendChild(style);
+</script>
+</body>
+</html>
